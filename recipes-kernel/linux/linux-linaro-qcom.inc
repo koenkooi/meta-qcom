@@ -13,7 +13,9 @@ LOCALVERSION ?= "+linaro"
 SCMVERSION ?= "y"
 
 LINUX_LINARO_QCOM_GIT ?= "git://git.linaro.org/landing-teams/working/qualcomm/kernel.git;protocol=https"
-SRC_URI = "${LINUX_LINARO_QCOM_GIT};branch=${SRCBRANCH}"
+SRC_URI = "${LINUX_LINARO_QCOM_GIT};branch=${SRCBRANCH} \
+           file://0001-Geniatech-panel-patch.patch \
+	  "
 
 S = "${WORKDIR}/git"
 
@@ -37,6 +39,7 @@ do_configure_prepend() {
 
 	kernel_conf_variable LOCALVERSION "\"${LOCALVERSION}\""
 	kernel_conf_variable LOCALVERSION_AUTO y
+
 
 	if [ -f '${WORKDIR}/defconfig' ]; then
 		sed -e "${CONF_SED_SCRIPT}" < '${WORKDIR}/defconfig' >> '${B}/.config'
@@ -77,6 +80,8 @@ do_configure_prepend() {
         # Now that all the fragments are located merge them.
         ( cd ${WORKDIR} && ${S}/scripts/kconfig/merge_config.sh -m -r -O ${B} ${B}/.config ${KERNEL_CONFIG_FRAGMENTS} 1>&2 )
     fi
+
+	kernel_conf_variable DRM_PANEL_JDI_LT070ME05000 y
 
 	yes '' | oe_runmake -C ${S} O=${B} oldconfig
         oe_runmake -C ${S} O=${B} savedefconfig && cp ${B}/defconfig ${WORKDIR}/defconfig.saved

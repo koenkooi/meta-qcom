@@ -1,0 +1,229 @@
+From 11e6dea8c8803e63e318322faf1daf8445e7bbfb Mon Sep 17 00:00:00 2001
+From: Koen Kooi <koen@dominion.thruhere.net>
+Date: Fri, 21 Sep 2018 17:27:27 +0200
+Subject: [PATCH] Geniatech panel patch
+
+Signed-off-by: Koen Kooi <koen@dominion.thruhere.net>
+---
+ arch/arm64/boot/dts/qcom/apq8016-sbc.dtsi      | 49 +++++++++++++++++++++-----
+ arch/arm64/boot/dts/qcom/msm8916-pins.dtsi     |  2 +-
+ arch/arm64/boot/dts/qcom/msm8916.dtsi          |  4 +--
+ drivers/gpu/drm/panel/panel-jdi-lt070me05000.c | 26 +++++++-------
+ 4 files changed, 57 insertions(+), 24 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/apq8016-sbc.dtsi b/arch/arm64/boot/dts/qcom/apq8016-sbc.dtsi
+index 4c3dda5..2452f9f 100644
+--- a/arch/arm64/boot/dts/qcom/apq8016-sbc.dtsi
++++ b/arch/arm64/boot/dts/qcom/apq8016-sbc.dtsi
+@@ -22,7 +22,7 @@
+ / {
+ 	aliases {
+ 		serial0 = &blsp1_uart2;
+-		serial1 = &blsp1_uart1;
++		/*serial1 = &blsp1_uart1;*/
+ 		usid0 = &pm8916_0;
+ 		i2c0	= &blsp_i2c2;
+ 		i2c1	= &blsp_i2c6;
+@@ -50,7 +50,7 @@
+ 		dma@7884000 {
+ 			status = "okay";
+ 		};
+-
++/*
+ 		serial@78af000 {
+ 			label = "LS-UART0";
+ 			status = "okay";
+@@ -58,7 +58,7 @@
+ 			pinctrl-0 = <&blsp1_uart1_default>;
+ 			pinctrl-1 = <&blsp1_uart1_sleep>;
+ 		};
+-
++*/
+ 		serial@78b0000 {
+ 			label = "LS-UART1";
+ 			status = "okay";
+@@ -75,6 +75,7 @@
+ 
+ 		i2c@78b8000 {
+ 		/* On High speed expansion */
++/*
+ 			label = "HS-I2C2";
+ 			status = "okay";
+ 
+@@ -121,6 +122,7 @@
+ 					};
+ 				};
+ 			};
++*/
+ 		};
+ 
+ 		i2c@78ba000 {
+@@ -139,6 +141,16 @@
+ 		/* On Low speed expansion */
+ 			label = "LS-SPI0";
+ 			status = "okay";
++
++                      spidev@0 {
++
++                               compatible = "spidev";
++
++                               spi-max-frequency = <100000>;
++
++                               reg = <0>;
++                	};
++
+ 		};
+ 
+ 		leds {
+@@ -250,10 +262,29 @@
+ 				vdda-supply = <&pm8916_l2>;
+ 				vddio-supply = <&pm8916_l6>;
+ 
++                                panel@0 {
++                                        reg = <0>;
++                                        compatible = "jdi,lt070me05000";
++
++                                        vddp-supply = <&pm8916_l2>;
++                                        iovcc-supply = <&pm8916_l6>;
++
++                                        reset-gpios = <&pm8916_mpps 4 1>;
++                                        enable-gpios = <&msmgpio  0 0>;
++					dcdc-en-gpios = <&msmgpio  32 0>;
++
++                                        port {
++                                                panel_in: endpoint {
++                                                        remote-endpoint = <&dsi0_out>;
++                                                };
++                                        };
++                                };
++
+ 				ports {
+ 					port@1 {
+ 						endpoint {
+-							remote-endpoint = <&adv7533_in>;
++                                                        /*remote-endpoint = <&adv7533_in>;*/
++                                                        remote-endpoint = <&panel_in>;
+ 							data-lanes = <0 1 2 3>;
+ 						};
+ 					};
+@@ -299,16 +330,18 @@
+                         qcom,audio-routing =
+                                 "AMIC2", "MIC BIAS Internal2",
+                                 "AMIC3", "MIC BIAS External1";
++			/* QUAT */
++/*
+ 			external-dai-link@0 {
+ 				link-name = "ADV7533";
+-				cpu { /* QUAT */
++				cpu {
+ 					sound-dai = <&lpass MI2S_QUATERNARY>;
+ 				};
+ 				codec {
+ 					sound-dai = <&adv_bridge 0>;
+ 				};
+ 			};
+-
++*/
+                         internal-codec-playback-dai-link@0 {            /* I2S - Internal codec */
+                                 link-name = "WCD";
+                                 cpu { /* PRIMARY */
+@@ -468,7 +501,7 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&usb_id_default>;
+ 	};
+-
++/*
+ 	hdmi-out {
+ 		compatible = "hdmi-connector";
+ 		type = "a";
+@@ -479,7 +512,7 @@
+ 			};
+ 		};
+ 	};
+-
++*/
+ 	gpio_keys {
+ 		compatible = "gpio-keys";
+ 		#address-cells = <1>;
+diff --git a/arch/arm64/boot/dts/qcom/msm8916-pins.dtsi b/arch/arm64/boot/dts/qcom/msm8916-pins.dtsi
+index b1ed8dc..7c086be 100644
+--- a/arch/arm64/boot/dts/qcom/msm8916-pins.dtsi
++++ b/arch/arm64/boot/dts/qcom/msm8916-pins.dtsi
+@@ -208,7 +208,7 @@
+ 			pins = "gpio16", "gpio17", "gpio19";
+ 		};
+ 		pinmux_cs {
+-			function = "gpio";
++			function = "blsp_spi5";
+ 			pins = "gpio18";
+ 		};
+ 		pinconf {
+diff --git a/arch/arm64/boot/dts/qcom/msm8916.dtsi b/arch/arm64/boot/dts/qcom/msm8916.dtsi
+index 34d4b00..b5c0fb8 100644
+--- a/arch/arm64/boot/dts/qcom/msm8916.dtsi
++++ b/arch/arm64/boot/dts/qcom/msm8916.dtsi
+@@ -376,7 +376,7 @@
+ 			compatible = "qcom,rpm-msg-ram";
+ 			reg = <0x60000 0x8000>;
+ 		};
+-
++/*
+ 		blsp1_uart1: serial@78af000 {
+ 			compatible = "qcom,msm-uartdm-v1.4", "qcom,msm-uartdm";
+ 			reg = <0x78af000 0x200>;
+@@ -387,7 +387,7 @@
+ 			dma-names = "rx", "tx";
+ 			status = "disabled";
+ 		};
+-
++*/
+ 		a53pll: clock@b016000 {
+ 			compatible = "qcom,msm8916-a53pll";
+ 			reg = <0xb016000 0x40>;
+diff --git a/drivers/gpu/drm/panel/panel-jdi-lt070me05000.c b/drivers/gpu/drm/panel/panel-jdi-lt070me05000.c
+index 5b2340e..f24dccd 100644
+--- a/drivers/gpu/drm/panel/panel-jdi-lt070me05000.c
++++ b/drivers/gpu/drm/panel/panel-jdi-lt070me05000.c
+@@ -298,17 +298,17 @@ static int jdi_panel_enable(struct drm_panel *panel)
+ }
+ 
+ static const struct drm_display_mode default_mode = {
+-		.clock = 155493,
+-		.hdisplay = 1200,
+-		.hsync_start = 1200 + 48,
+-		.hsync_end = 1200 + 48 + 32,
+-		.htotal = 1200 + 48 + 32 + 60,
+-		.vdisplay = 1920,
+-		.vsync_start = 1920 + 3,
+-		.vsync_end = 1920 + 3 + 5,
+-		.vtotal = 1920 + 3 + 5 + 6,
+-		.vrefresh = 60,
+-		.flags = 0,
++                .clock = 72460,
++                .hdisplay = 1280,
++                .hsync_start = 1280 + 148,
++                .hsync_end = 1280 + 148 + 32,
++                .htotal = 1280 + 148 + 32 + 20,
++                .vdisplay = 800,
++                .vsync_start = 800 + 4,
++                .vsync_end = 800 + 4 + 4,
++                .vtotal = 800 + 4 + 4 + 8,
++                .vrefresh = 60,
++                .flags = 0,
+ };
+ 
+ static int jdi_panel_get_modes(struct drm_panel *panel)
+@@ -329,8 +329,8 @@ static int jdi_panel_get_modes(struct drm_panel *panel)
+ 
+ 	drm_mode_probed_add(panel->connector, mode);
+ 
+-	panel->connector->display_info.width_mm = 95;
+-	panel->connector->display_info.height_mm = 151;
++	panel->connector->display_info.width_mm = 220;
++	panel->connector->display_info.height_mm = 140;
+ 
+ 	return 1;
+ }
+-- 
+2.0.1
+
