@@ -7,6 +7,7 @@ SRC_URI:append:qcom = " \
     file://qcm6490-board-dts/0001-FROMLIST-arm64-dts-qcom-qcm6490-idp-Update-protected.patch \
     file://qcm6490-board-dts/0001-dt-bindings-PCI-Add-binding-for-qps615.patch \
     file://qcm6490-board-dts/0002-arm64-dts-qcom-qcs6490-rb3gen2-Add-node-for-qps615.patch \
+    file://qcm6490-board-dts/0001-arm64-dts-qcom-qcs6490-rb3gen2-Plumb-the-QPS615-and-.patch \
     file://workarounds/0001-QCLINUX-arm64-dts-qcom-qcm6490-disable-sdhc1-for-ufs.patch \
     file://workarounds/0001-PENDING-arm64-dts-qcom-Remove-voltage-vote-support-f.patch \
     file://workarounds/0003-PCI-Add-new-start_link-stop_link-function-ops.patch \

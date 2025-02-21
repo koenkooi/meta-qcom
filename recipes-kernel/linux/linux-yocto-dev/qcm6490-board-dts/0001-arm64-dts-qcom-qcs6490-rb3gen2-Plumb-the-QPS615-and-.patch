@@ -1,0 +1,161 @@
+From 5ce26156843fdb76a3fac678544698919f352f38 Mon Sep 17 00:00:00 2001
+From: Jorge Ramirez-Ortiz <jorge@foundries.io>
+Date: Fri, 21 Feb 2025 18:36:54 +0100
+Subject: [PATCH] arm64: dts: qcom: qcs6490-rb3gen2: Plumb the QPS615 and USB
+ pieces
+
+Enable the PCIe controller and make sure relevant power is on and resets
+are let go of, to make the USB Ethernet adapter show up.
+
+Signed-off-by: Bjorn Andersson <bjorn.andersson@oss.qualcomm.com>
+Tested-by: Jorge Ramirez-Ortiz <jorge.ramirez@oss.qualcomm.com>
+
+Upstream-Status: Pending
+
+---
+ arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts | 82 +++++++++++++++++++-
+ 1 file changed, 80 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts b/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts
+index af79c48f3455..074da2bd57ba 100644
+--- a/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts
++++ b/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts
+@@ -217,7 +217,7 @@ vph_pwr: vph-pwr-regulator {
+ 		regulator-min-microvolt = <3700000>;
+ 		regulator-max-microvolt = <3700000>;
+ 	};
+-	
++
+        vdd_ntn_0p9: regulator-vdd-ntn-0p9 {
+                compatible = "regulator-fixed";
+                regulator-name = "VDD_NTN_0P9";
+@@ -241,7 +241,33 @@ vdd_ntn_1p8: regulator-vdd-ntn-1p8 {
+                pinctrl-names = "default";
+                regulator-enable-ramp-delay = <10000>;
+        };
+-	
++
++
++        vreg-pcie0-1p05v {
++               compatible = "regulator-fixed";
++               regulator-name = "PCIE0_1.05V";
++               gpio = <&pm7250b_gpios 4 GPIO_ACTIVE_HIGH>;
++               regulator-min-microvolt = <1050000>;
++               regulator-max-microvolt = <1050000>;
++               enable-active-high;
++               pinctrl-0 = <&upd_pwr_en2_state>;
++               pinctrl-names = "default";
++
++               regulator-always-on;
++       };
++
++       vreg-pcie0_3p3v-dual {
++               compatible = "regulator-fixed";
++               regulator-name = "PCIE0_3.3V_Dual";
++               gpio = <&pm7250b_gpios 1 GPIO_ACTIVE_HIGH>;
++               regulator-min-microvolt = <3300000>;
++               regulator-max-microvolt = <3300000>;
++               enable-active-high;
++               pinctrl-0 = <&upd_pwr_en1_state>;
++               pinctrl-names = "default";
++
++               regulator-always-on;
++       };
+ };
+ 
+ &apps_rsc {
+@@ -751,6 +777,9 @@ pcie@0,0 {
+                vddio2-supply = <&vdd_ntn_1p8>;
+                vddio18-supply = <&vdd_ntn_1p8>;
+ 
++               pinctrl-0 = <&qps615_resx_state>, <&upd_hub_rst_state>, <&usb_hub_reset_state>;
++               pinctrl-names = "default";
++
+                i2c-parent = <&i2c0 0x77>;
+ 
+                reset-gpios = <&pm8350c_gpios 1 GPIO_ACTIVE_LOW>;
+@@ -985,6 +1014,15 @@ &edp_hot_plug_det {
+ };
+ 
+ &pm7250b_gpios {
++	upd_pwr_en1_state: upd-pwr-en1-state {
++              pins = "gpio1";
++              function = "normal";
++
++              output-enable;
++              input-disable;
++              power-source = <0>;
++        };
++
+ 	lt9611_rst_pin: lt9611-rst-state {
+ 		pins = "gpio2";
+ 		function = "normal";
+@@ -993,6 +1031,15 @@ lt9611_rst_pin: lt9611-rst-state {
+ 		input-disable;
+ 		power-source = <0>;
+ 	};
++
++       upd_pwr_en2_state: upd-pwr-en2-state {
++               pins = "gpio4";
++               function = "normal";
++
++               output-enable;
++               input-disable;
++               power-source = <0>;
++       };
+ };
+ 
+ &sdc2_clk {
+@@ -1011,6 +1058,16 @@ &sdc2_data {
+ };
+ 
+ &pm8350c_gpios {
++       qps615_resx_state: qps615-resetx-state {
++               pins = "gpio1";
++               function = "normal";
++
++               bias-disable;
++               input-disable;
++               output-enable;
++               power-source = <0>;
++       };
++
+        ntn_0p9_en: ntn-0p9-en-state {
+                pins = "gpio2";
+                function = "normal";
+@@ -1030,6 +1087,17 @@ ntn_1p8_en: ntn-1p8-en-state {
+                output-enable;
+                power-source = <0>;
+        };
++
++      upd_hub_rst_state: upd-hub-rst-state {
++               pins = "gpio4";
++               function = "normal";
++
++               bias-disable;
++               input-disable;
++               output-enable;
++               output-high;
++               power-source = <0>;
++       };
+ };
+ 
+ &tlmm {
+@@ -1060,4 +1128,14 @@ sd_cd: sd-cd-state {
+ 		function = "gpio";
+ 		bias-pull-up;
+ 	};
++
++       usb_hub_reset_state: usb-hub-reset-state {
++               pins = "gpio162";
++               function = "gpio";
++
++               drive-strength = <2>;
++               output-low;
++               bias-disable;
++       };
++
+ };
+-- 
+2.34.1
+
