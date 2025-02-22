@@ -1,0 +1,33 @@
+From a637aa63e24281d91e6c552334c45936dafb109e Mon Sep 17 00:00:00 2001
+From: Jorge Ramirez-Ortiz <jorge@foundries.io>
+Date: Sat, 22 Feb 2025 09:18:51 +0100
+Subject: [PATCH 3/4] arm64: dts: qcom: qcm6490-idp: Update the LPASS
+
+Update the lpassaudio node to support the new compatible as the
+lpassaudio needs to support the reset functionality on the
+QCM6490 IDP board and the rest of the Audio functionality would be
+provided from the LPASS firmware.
+
+Reviewed-by: Dmitry Baryshkov <dmitry.baryshkov@linaro.org>
+Signed-off-by: Taniya Das <quic_tdas@quicinc.com>
+Upstream-Status: Submitted [https://lore.kernel.org/linux-arm-msm/20250221-lpass_qcm6490_resets-v5-0-6be0c0949a83@quicinc.com/]
+---
+ arch/arm64/boot/dts/qcom/qcm6490-idp.dts | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/qcm6490-idp.dts b/arch/arm64/boot/dts/qcom/qcm6490-idp.dts
+index e52dfc030e9c..916e6576ff65 100644
+--- a/arch/arm64/boot/dts/qcom/qcm6490-idp.dts
++++ b/arch/arm64/boot/dts/qcom/qcm6490-idp.dts
+@@ -791,3 +791,8 @@ &wifi {
+ 
+ 	status = "okay";
+ };
++
++&lpass_audiocc {
++	compatible = "qcom,qcm6490-lpassaudiocc";
++	/delete-property/ power-domains;
++};
+-- 
+2.34.1
+
