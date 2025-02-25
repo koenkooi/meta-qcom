@@ -11,6 +11,8 @@ SRC_URI:append:qcom = " \
     file://qcm6490-board-dts/0001-dt-bindings-clock-qcom-Add-compatible-for.patch \
     file://qcm6490-board-dts/0003-arm64-dts-qcom-qcm6490-idp-Update-the-LPASS.patch \
     file://qcm6490-board-dts/0004-arm64-dts-qcom-qcs6490-rb3gen2-Update-the-LPASS-audi.patch \
+    file://qcm6490-board-dts/0001-dt-bindings-PCI-qcom-pcie-sc7280-Add-global-interrup.patch \
+    file://qcm6490-board-dts/0001-arm64-dts-qcom-sc7280-Add-global-interrupt-to-the-PC.patch \
     file://workarounds/0001-QCLINUX-arm64-dts-qcom-qcm6490-disable-sdhc1-for-ufs.patch \
     file://workarounds/0001-PENDING-arm64-dts-qcom-Remove-voltage-vote-support-f.patch \
     file://workarounds/0003-PCI-Add-new-start_link-stop_link-function-ops.patch \
