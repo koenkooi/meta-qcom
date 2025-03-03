@@ -1,0 +1,38 @@
+From a44b736f513975c91bae23cdf523d05a653971a2 Mon Sep 17 00:00:00 2001
+From: Krishna chaitanya chundru <quic_krichai@quicinc.com>
+Date: Tue, 12 Nov 2024 20:31:35 +0530
+Subject: [PATCH 3/6] PCI: Add new start_link() & stop_link function ops
+
+Certain devices like QPS615 which uses PCI pwrctl framework
+needs to configure the device before PCI link is up.
+
+If the controller driver already enables link training as part of
+its probe, after the device is powered on, controller and device
+participates in the link training and link can come up immediately
+and maynot have time to configure the device.
+
+So we need to stop the link training by using stop_link() and enable
+them back after device is configured by using start_link().
+
+Signed-off-by: Krishna chaitanya chundru <quic_krichai@quicinc.com>
+Upstream-Status: Submitted [https://lore.kernel.org/linux-arm-msm/20241112-qps615_pwr-v3-0-29a1e98aa2b0@quicinc.com/]
+---
+ include/linux/pci.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/include/linux/pci.h b/include/linux/pci.h
+index db9b47ce3eef..372bda593f53 100644
+--- a/include/linux/pci.h
++++ b/include/linux/pci.h
+@@ -802,6 +802,8 @@ struct pci_ops {
+ 	void __iomem *(*map_bus)(struct pci_bus *bus, unsigned int devfn, int where);
+ 	int (*read)(struct pci_bus *bus, unsigned int devfn, int where, int size, u32 *val);
+ 	int (*write)(struct pci_bus *bus, unsigned int devfn, int where, int size, u32 val);
++	int (*start_link)(struct pci_bus *bus);
++	void (*stop_link)(struct pci_bus *bus);
+ };
+ 
+ /*
+-- 
+2.34.1
+

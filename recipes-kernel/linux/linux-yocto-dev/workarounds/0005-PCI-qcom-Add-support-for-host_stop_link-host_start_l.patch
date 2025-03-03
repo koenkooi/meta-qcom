@@ -1,0 +1,98 @@
+From 3315a5620023f52df7f4b06aef78f4748a2b1610 Mon Sep 17 00:00:00 2001
+From: Krishna chaitanya chundru <quic_krichai@quicinc.com>
+Date: Tue, 12 Nov 2024 20:31:37 +0530
+Subject: [PATCH 5/6] PCI: qcom: Add support for host_stop_link() &
+ host_start_link()
+
+For the switches like QPS615 which needs to configure it before
+the PCIe link is established.
+
+If the link is up, the boatloader might powered and configured the
+endpoint/switch already. In that case don't touch PCIe link else
+assert the PERST# and disable LTSSM bit so that PCIe controller
+will not participate in the link training as part of host_stop_link().
+
+De-assert the PERST# and enable LTSSM bit back in host_start_link().
+
+Introduce ltssm_disable function op to stop the link training.
+
+Signed-off-by: Krishna chaitanya chundru <quic_krichai@quicinc.com>
+Upstream-Status: Submitted [https://lore.kernel.org/linux-arm-msm/20241112-qps615_pwr-v3-0-29a1e98aa2b0@quicinc.com/]
+---
+ drivers/pci/controller/dwc/pcie-qcom.c | 39 ++++++++++++++++++++++++++
+ 1 file changed, 39 insertions(+)
+
+diff --git a/drivers/pci/controller/dwc/pcie-qcom.c b/drivers/pci/controller/dwc/pcie-qcom.c
+index dc102d8bd58c..8015958acb85 100644
+--- a/drivers/pci/controller/dwc/pcie-qcom.c
++++ b/drivers/pci/controller/dwc/pcie-qcom.c
+@@ -247,6 +247,7 @@ struct qcom_pcie_ops {
+ 	void (*host_post_init)(struct qcom_pcie *pcie);
+ 	void (*deinit)(struct qcom_pcie *pcie);
+ 	void (*ltssm_enable)(struct qcom_pcie *pcie);
++	void (*ltssm_disable)(struct qcom_pcie *pcie);
+ 	int (*config_sid)(struct qcom_pcie *pcie);
+ };
+ 
+@@ -618,6 +619,41 @@ static int qcom_pcie_post_init_1_0_0(struct qcom_pcie *pcie)
+ 	return 0;
+ }
+ 
++static int qcom_pcie_host_start_link(struct dw_pcie *pci)
++{
++	struct qcom_pcie *pcie = to_qcom_pcie(pci);
++
++	if (!dw_pcie_link_up(pcie->pci))  {
++		qcom_ep_reset_deassert(pcie);
++
++		if (pcie->cfg->ops->ltssm_enable)
++			pcie->cfg->ops->ltssm_enable(pcie);
++	}
++
++	return 0;
++}
++
++static void qcom_pcie_host_stop_link(struct dw_pcie *pci)
++{
++	struct qcom_pcie *pcie = to_qcom_pcie(pci);
++
++	if (!dw_pcie_link_up(pcie->pci))  {
++		qcom_ep_reset_assert(pcie);
++
++		if (pcie->cfg->ops->ltssm_disable)
++			pcie->cfg->ops->ltssm_disable(pcie);
++	}
++}
++
++static void qcom_pcie_2_3_2_ltssm_disable(struct qcom_pcie *pcie)
++{
++	u32 val;
++
++	val = readl(pcie->parf + PARF_LTSSM);
++	val &= ~LTSSM_EN;
++	writel(val, pcie->parf + PARF_LTSSM);
++}
++
+ static void qcom_pcie_2_3_2_ltssm_enable(struct qcom_pcie *pcie)
+ {
+ 	u32 val;
+@@ -1362,6 +1398,7 @@ static const struct qcom_pcie_ops ops_1_9_0 = {
+ 	.host_post_init = qcom_pcie_host_post_init_2_7_0,
+ 	.deinit = qcom_pcie_deinit_2_7_0,
+ 	.ltssm_enable = qcom_pcie_2_3_2_ltssm_enable,
++	.ltssm_disable = qcom_pcie_2_3_2_ltssm_disable,
+ 	.config_sid = qcom_pcie_config_sid_1_9_0,
+ };
+ 
+@@ -1429,6 +1466,8 @@ static const struct qcom_pcie_cfg cfg_sc8280xp = {
+ static const struct dw_pcie_ops dw_pcie_ops = {
+ 	.link_up = qcom_pcie_link_up,
+ 	.start_link = qcom_pcie_start_link,
++	.host_start_link = qcom_pcie_host_start_link,
++	.host_stop_link = qcom_pcie_host_stop_link,
+ };
+ 
+ static int qcom_pcie_icc_init(struct qcom_pcie *pcie)
+-- 
+2.34.1
+

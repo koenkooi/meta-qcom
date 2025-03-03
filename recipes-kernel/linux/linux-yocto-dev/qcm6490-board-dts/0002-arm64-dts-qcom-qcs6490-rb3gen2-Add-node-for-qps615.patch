@@ -1,0 +1,178 @@
+From 7442d2b73d735bf14b15df0afca9733373d293f0 Mon Sep 17 00:00:00 2001
+From: Krishna chaitanya chundru <quic_krichai@quicinc.com>
+Date: Tue, 12 Nov 2024 20:31:34 +0530
+Subject: [PATCH 2/6] arm64: dts: qcom: qcs6490-rb3gen2: Add node for qps615
+
+Add QPS615 PCIe switch node which has 3 downstream ports and in one
+downstream port two embedded ethernet devices are present.
+
+Power to the QPS615 is supplied through two LDO regulators, controlled
+by two GPIOs, these are added as fixed regulators. And the QPS615 is
+configured through i2c.
+
+Signed-off-by: Krishna chaitanya chundru <quic_krichai@quicinc.com>
+Reviewed-by: Bjorn Andersson <andersson@kernel.org>
+Acked-by: Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
+Upstream-Status: Submitted [https://lore.kernel.org/linux-arm-msm/20241112-qps615_pwr-v3-0-29a1e98aa2b0@quicinc.com/]
+---
+ arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts | 116 +++++++++++++++++++
+ arch/arm64/boot/dts/qcom/sc7280.dtsi         |   2 +-
+ 2 files changed, 117 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts b/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts
+index 27695bd54220..af79c48f3455 100644
+--- a/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts
++++ b/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts
+@@ -217,6 +217,31 @@ vph_pwr: vph-pwr-regulator {
+ 		regulator-min-microvolt = <3700000>;
+ 		regulator-max-microvolt = <3700000>;
+ 	};
++	
++       vdd_ntn_0p9: regulator-vdd-ntn-0p9 {
++               compatible = "regulator-fixed";
++               regulator-name = "VDD_NTN_0P9";
++               gpio = <&pm8350c_gpios 2 GPIO_ACTIVE_HIGH>;
++               regulator-min-microvolt = <899400>;
++               regulator-max-microvolt = <899400>;
++               enable-active-high;
++               pinctrl-0 = <&ntn_0p9_en>;
++               pinctrl-names = "default";
++               regulator-enable-ramp-delay = <4300>;
++       };
++
++       vdd_ntn_1p8: regulator-vdd-ntn-1p8 {
++               compatible = "regulator-fixed";
++               regulator-name = "VDD_NTN_1P8";
++               gpio = <&pm8350c_gpios 3 GPIO_ACTIVE_HIGH>;
++               regulator-min-microvolt = <1800000>;
++               regulator-max-microvolt = <1800000>;
++               enable-active-high;
++               pinctrl-0 = <&ntn_1p8_en>;
++               pinctrl-names = "default";
++               regulator-enable-ramp-delay = <10000>;
++       };
++	
+ };
+ 
+ &apps_rsc {
+@@ -708,6 +733,75 @@ &mdss_edp_phy {
+ 	status = "okay";
+ };
+ 
++&pcie1_port {
++       pcie@0,0 {
++               compatible = "pci1179,0623";
++               reg = <0x10000 0x0 0x0 0x0 0x0>;
++               #address-cells = <3>;
++               #size-cells = <2>;
++
++               device_type = "pci";
++               ranges;
++               bus-range = <0x2 0xff>;
++
++               vddc-supply = <&vdd_ntn_0p9>;
++               vdd18-supply = <&vdd_ntn_1p8>;
++               vdd09-supply = <&vdd_ntn_0p9>;
++               vddio1-supply = <&vdd_ntn_1p8>;
++               vddio2-supply = <&vdd_ntn_1p8>;
++               vddio18-supply = <&vdd_ntn_1p8>;
++
++               i2c-parent = <&i2c0 0x77>;
++
++               reset-gpios = <&pm8350c_gpios 1 GPIO_ACTIVE_LOW>;
++
++               pcie@1,0 {
++                       reg = <0x20800 0x0 0x0 0x0 0x0>;
++                       #address-cells = <3>;
++                       #size-cells = <2>;
++
++                       device_type = "pci";
++                       ranges;
++                       bus-range = <0x3 0xff>;
++               };
++
++               pcie@2,0 {
++                       reg = <0x21000 0x0 0x0 0x0 0x0>;
++                       #address-cells = <3>;
++                       #size-cells = <2>;
++
++                       device_type = "pci";
++                       ranges;
++                       bus-range = <0x4 0xff>;
++               };
++
++               pcie@3,0 {
++                       reg = <0x21800 0x0 0x0 0x0 0x0>;
++                       #address-cells = <3>;
++                       #size-cells = <2>;
++                       device_type = "pci";
++                       ranges;
++                       bus-range = <0x5 0xff>;
++
++                       pcie@0,0 {
++                               reg = <0x50000 0x0 0x0 0x0 0x0>;
++                               #address-cells = <3>;
++                               #size-cells = <2>;
++                               device_type = "pci";
++                               ranges;
++                       };
++
++                       pcie@0,1 {
++                               reg = <0x50100 0x0 0x0 0x0 0x0>;
++                               #address-cells = <3>;
++                               #size-cells = <2>;
++                               device_type = "pci";
++                               ranges;
++                       };
++               };
++        };
++};
++
+ &pcie1 {
+ 	perst-gpios = <&tlmm 2 GPIO_ACTIVE_LOW>;
+ 
+@@ -916,6 +1010,28 @@ &sdc2_data {
+ 	drive-strength = <10>;
+ };
+ 
++&pm8350c_gpios {
++       ntn_0p9_en: ntn-0p9-en-state {
++               pins = "gpio2";
++               function = "normal";
++
++               bias-disable;
++               input-disable;
++               output-enable;
++               power-source = <0>;
++       };
++
++       ntn_1p8_en: ntn-1p8-en-state {
++               pins = "gpio3";
++               function = "normal";
++
++               bias-disable;
++               input-disable;
++               output-enable;
++               power-source = <0>;
++       };
++};
++
+ &tlmm {
+ 	lt9611_irq_pin: lt9611-irq-state {
+ 		pins = "gpio24";
+diff --git a/arch/arm64/boot/dts/qcom/sc7280.dtsi b/arch/arm64/boot/dts/qcom/sc7280.dtsi
+index 55db1c83ef55..de93ae1b6d7c 100644
+--- a/arch/arm64/boot/dts/qcom/sc7280.dtsi
++++ b/arch/arm64/boot/dts/qcom/sc7280.dtsi
+@@ -2284,7 +2284,7 @@ pcie1: pcie@1c08000 {
+ 
+ 			status = "disabled";
+ 
+-			pcie@0 {
++			pcie1_port: pcie@0 {
+ 				device_type = "pci";
+ 				reg = <0x0 0x0 0x0 0x0 0x0>;
+ 				bus-range = <0x01 0xff>;
+-- 
+2.34.1
+

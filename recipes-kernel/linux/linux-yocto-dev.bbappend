@@ -5,8 +5,14 @@ FILESEXTRAPATHS:prepend:qcom := "${THISDIR}/${PN}:"
 
 SRC_URI:append:qcom = " \
     file://qcm6490-board-dts/0001-FROMLIST-arm64-dts-qcom-qcm6490-idp-Update-protected.patch \
+    file://qcm6490-board-dts/0001-dt-bindings-PCI-Add-binding-for-qps615.patch \
+    file://qcm6490-board-dts/0002-arm64-dts-qcom-qcs6490-rb3gen2-Add-node-for-qps615.patch \
     file://workarounds/0001-QCLINUX-arm64-dts-qcom-qcm6490-disable-sdhc1-for-ufs.patch \
     file://workarounds/0001-PENDING-arm64-dts-qcom-Remove-voltage-vote-support-f.patch \
+    file://workarounds/0003-PCI-Add-new-start_link-stop_link-function-ops.patch \
+    file://workarounds/0004-PCI-dwc-Add-support-for-new-pci-function-op.patch \
+    file://workarounds/0005-PCI-qcom-Add-support-for-host_stop_link-host_start_l.patch \
+    file://workarounds/0006-PCI-pwrctl-Add-power-control-driver-for-qps615.patch \
 "
 
 # Include additional kernel configs.
