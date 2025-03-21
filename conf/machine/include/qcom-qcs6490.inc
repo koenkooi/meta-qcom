@@ -11,6 +11,7 @@ KERNEL_CMDLINE_EXTRA ?= "pcie_pme=nomsi earlycon"
 
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += " \
     packagegroup-qcom-boot-essential \
+    packagegroup-machine-essential-qcom-qcs6490-soc \
 "
 
 MACHINE_EXTRA_RRECOMMENDS += " \
